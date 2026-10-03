@@ -1,0 +1,12 @@
+{
+  "name": "sistema-nomina",
+  "version": "1.0.0",
+  "description": "Sistema de nómina orientado a objetos en JavaScript",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=18" }
+}
