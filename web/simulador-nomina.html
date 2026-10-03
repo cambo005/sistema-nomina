@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador de nómina</title>
+<style>
+:root{--bg:#fff;--card:#f4f4f6;--tx:#1d1d1f;--mu:#6b6b72;--ac:#2f6fed;--ok:#1a7f4b;--er:#c0392b;--bd:#dcdce0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17171a;--card:#232328;--tx:#f0f0f2;--mu:#a0a0aa;--ac:#6c9bff;--ok:#4cc38a;--er:#ff7b6b;--bd:#3a3a42}}
+:root[data-theme="dark"]{--bg:#17171a;--card:#232328;--tx:#f0f0f2;--mu:#a0a0aa;--ac:#6c9bff;--ok:#4cc38a;--er:#ff7b6b;--bd:#3a3a42}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.4rem;margin:0 0 4px}p.s{color:var(--mu);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+label{display:block;font-size:.85rem;color:var(--mu);margin:10px 0 4px}
+input,select{width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+.chk{display:flex;gap:8px;align-items:center;margin-top:12px}.chk input{width:auto}
+button{margin-top:16px;width:100%;padding:12px;border:0;border-radius:8px;background:var(--ac);color:#fff;font:600 1rem system-ui;cursor:pointer}
+.row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border:0}.pos{color:var(--ok)}.neg{color:var(--er)}
+.net{font-weight:700;font-size:1.15rem}.err{color:var(--er);font-weight:600}
+h2{font-size:1rem;margin:0 0 8px}.hint{font-size:.8rem;color:var(--mu)}
+</style></head><body><main>
+<h1>Simulador de nómina</h1>
+<p class="s">Mismas reglas y fórmulas que el proyecto en JavaScript. Elige un tipo de empleado y calcula.</p>
+<div class="card">
+<label>Tipo de empleado</label>
+<select id="type"><option value="sal">Asalariado</option><option value="hor">Por horas</option><option value="com">Por comisión</option><option value="tmp">Temporal</option></select>
+<label>Nombre</label><input id="name" value="Ana Gómez">
+<label>Años de servicio</label><input id="years" type="number" step="0.5" value="6">
+<div id="f-sal"><label>Salario mensual ($)</label><input id="salary" type="number" value="4000000"></div>
+<div id="f-hor" hidden><label>Tarifa por hora ($)</label><input id="rate" type="number" value="10000">
+<label>Horas trabajadas</label><input id="hours" type="number" value="45">
+<div class="chk"><input id="fund" type="checkbox" checked><span>Acepta el fondo de ahorro (requiere más de 1 año)</span></div></div>
+<div id="f-com" hidden><label>Salario base ($)</label><input id="base" type="number" value="2000000">
+<label>Ventas ($)</label><input id="sales" type="number" value="25000000">
+<label>Comisión (%)</label><input id="pct" type="number" step="0.1" value="2"></div>
+<div id="f-tmp" hidden><label>Salario mensual ($)</label><input id="tsal" type="number" value="2500000">
+<label>Duración del contrato (meses)</label><input id="months" type="number" value="6"></div>
+<button id="go">Calcular desprendible</button>
+<p class="hint">Prueba casos límite: horas negativas, ventas de exactamente 20.000.000, 5 años exactos.</p>
+</div>
+<div class="card" id="out" hidden></div>
+</main>
+<script>
+const C={SEN:5,SALB:.10,HRS:40,OT:1.5,FUNDY:1,FUNDR:.02,THR:20e6,HIB:.03,PEN:.04,ARL:.00522,FOOD:1e6};
+const $=id=>document.getElementById(id);
+const money=v=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:2}).format(v);
+const r2=x=>Math.round(Number((x*100).toPrecision(12)))/100;
+function num(id,f){const v=$(id).value,n=Number(v);if(v===''||isNaN(n))throw new Error(f+' debe ser un valor numérico.');if(n<0)throw new Error(f+' no puede ser negativo.');return n}
+function calc(){
+  if(!$('name').value.trim())throw new Error('El nombre es obligatorio.');
+  const t=$('type').value,yrs=num('years','Años de servicio');
+  let base=0,bonus=0,perm=false,fund=false;
+  if(t==='sal'){base=num('salary','Salario mensual');bonus=yrs>C.SEN?base*C.SALB:0;perm=true}
+  if(t==='hor'){const r=num('rate','Tarifa por hora'),h=num('hours','Horas trabajadas');
+    base=Math.min(h,C.HRS)*r+Math.max(h-C.HRS,0)*r*C.OT;fund=yrs>C.FUNDY&&$('fund').checked}
+  if(t==='com'){const b=num('base','Salario base'),s=num('sales','Ventas'),p=num('pct','Comisión')/100;
+    base=b+s*p;bonus=s>C.THR?s*C.HIB:0;perm=true}
+  if(t==='tmp'){base=num('tsal','Salario mensual');if(num('months','Duración del contrato')<=0)throw new Error('La duración del contrato debe ser mayor a 0 meses.')}
+  const gross=base+bonus,food=perm?C.FOOD:0;
+  const ded=[['Seguro social y pensión',gross*C.PEN],['ARL',gross*C.ARL],['Fondo de ahorro',fund?gross*C.FUNDR:0]].map(([n,v])=>[n,r2(v)]);
+  const net=r2(r2(gross)+food-ded.reduce((a,d)=>a+d[1],0));
+  if(net<0)throw new Error('El salario neto no puede ser negativo.');
+  return{base:r2(base),bonus:r2(bonus),gross:r2(gross),food,ded,net};
+}
+function show(){
+  const o=$('out');o.hidden=false;
+  try{const p=calc(),row=(l,v,c='')=>`<div class="row"><span>${l}</span><span class="${c}">${money(v)}</span></div>`;
+    o.innerHTML=`<h2>Desprendible de ${$('name').value.trim()}</h2>`+row('Pago base',p.base)+row('Bono',p.bonus)+row('<b>Salario bruto</b>',p.gross)+
+    row('Bono de alimentación (empresa)',p.food,'pos')+p.ded.map(d=>row(d[0],-d[1],d[1]?'neg':'')).join('')+
+    `<div class="row net"><span>Salario neto</span><span>${money(p.net)}</span></div>`;
+  }catch(e){o.innerHTML=`<p class="err">⚠ ${e.message}</p>`}
+}
+function sync(){['sal','hor','com','tmp'].forEach(k=>$('f-'+k).hidden=$('type').value!==k)}
+$('type').onchange=()=>{sync();$('out').hidden=true};$('go').onclick=show;sync();show();
+</script></body></html>
