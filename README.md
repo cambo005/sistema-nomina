@@ -18,6 +18,10 @@ Sistema de nómina orientado a objetos para empleados Asalariados, por Horas, po
 
 No requiere `npm install`: no usa librerías externas (las pruebas usan el runner nativo de Node).
 
+## Simulador web (opcional)
+Abre `web/simulador-nomina.html` en el navegador (doble clic, o con la extensión Live Server de VS Code)
+para probar las reglas de nómina con una interfaz gráfica, sin usar la consola.
+
 ## Estructura
 ```
 src/
